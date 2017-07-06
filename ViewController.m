@@ -7,6 +7,11 @@
 //
 
 #import "ViewController.h"
+#import "BonjourServer.h"
+@interface ViewController()
+@property (assign) IBOutlet NSTextField *textField;
+
+@end
 
 @implementation ViewController
 
@@ -22,6 +27,15 @@
 
     // Update the view, if already loaded.
 }
+- (IBAction)sendMessage:(id)sender {
+    [[BonjourServer shareInsatance] sendMessage:@"nihao"];
+}
 
+- (IBAction)startService:(id)sender {
+    [[BonjourServer shareInsatance] startServerWithName:@"service_123"];
+}
+- (IBAction)stopService:(id)sender {
+    [[BonjourServer shareInsatance] stopServer];
+}
 
 @end

@@ -145,6 +145,8 @@
         return NO;
     }
     
+    NSLog(@"建立Bonjour连接成功");
+    
     return YES;
 }
 #pragma mark - ReadSream 事件处理
@@ -200,7 +202,7 @@ void readStreamEventHandler(CFReadStreamRef stream, CFStreamEventType eventType,
                 //复制4-xxx长度
                 //4个长度之后的数据
                 memcpy(&packetBodySize, [incomingDataBuffer bytes], sizeof(int));
-                NSLog(@"********从输入缓存区取拿包数据****************");
+                //NSLog(@"********从输入缓存区取拿包数据****************");
                 
                 NSRange rangeToDelete = {0, sizeof(int)};
                 //移除
@@ -213,7 +215,7 @@ void readStreamEventHandler(CFReadStreamRef stream, CFStreamEventType eventType,
         
         // 提取body
         if ( [incomingDataBuffer length] >= packetBodySize ) {
-            NSLog(@"********把Body从缓存区拿出来****************");
+            //NSLog(@"********把Body从缓存区拿出来****************");
             // We now have enough data to extract a meaningful packet.
             NSData* raw = [NSData dataWithBytes:[incomingDataBuffer bytes] length:packetBodySize];
             NSString* packet = [NSKeyedUnarchiver unarchiveObjectWithData:raw];
@@ -378,8 +380,8 @@ void writeStreamEventHandler(CFWriteStreamRef stream, CFStreamEventType eventTyp
         return;
     }
     NSLog(@"bonjour服务解析失败, %@", sender.name);
-    [self.delegate connectionAttemptFailed:self];
     [self close];
+    [self.delegate connectionAttemptFailed:self];
 }
 - (void)netServiceDidResolveAddress:(NSNetService *)sender
 {
@@ -391,13 +393,13 @@ void writeStreamEventHandler(CFWriteStreamRef stream, CFStreamEventType eventTyp
     self.host = netService.hostName;
     self.port = netService.port;
     
-    //不在需要netService
+    //不再需要netService
     netService = nil;
     
     //连接
     if ( ![self connect] ) {
-        [self.delegate connectionAttemptFailed:self];
         [self close];
+        [self.delegate connectionAttemptFailed:self];
     }
 }
 

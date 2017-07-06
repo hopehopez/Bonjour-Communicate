@@ -11,7 +11,7 @@
 #include <unistd.h>
 #import "Connection.h"
 
-@interface BonjourServer ()<NSNetServiceDelegate>{
+@interface BonjourServer ()<NSNetServiceDelegate, ConnectionDelegate>{
     CFSocketRef _listeningSocket;
 }
 
@@ -22,7 +22,8 @@
 //bonjour端口
 @property (nonatomic, assign) uint16_t port;
 @property (nonatomic, assign) NSTimeInterval lastTime;
-
+//存放所有的连接
+@property (nonatomic, strong) NSMutableSet *clients;
 
 @end
 
@@ -33,6 +34,7 @@
     static dispatch_once_t onceToken;
     dispatch_once(&onceToken, ^{
         _service = [[BonjourServer alloc] init];
+        _service.clients = [NSMutableSet set];
     });
     return _service;
 }
@@ -177,12 +179,17 @@ static void SocketAcceptCallBack(CFSocketRef s, CFSocketCallBackType type, CFDat
         return;
     }
     
+    connection.delegate = self;
+    
     // 连接成功
     BOOL succeed = [connection connect];
     if ( !succeed ) {
         [connection close];
         return;
     }
+    
+    [self.clients addObject:connection];
+    
     // 客户端进来的回调
     if (self.delegate && [self.delegate respondsToSelector:@selector(handleNewClient:)]) {
         [self.delegate handleNewClient:connection];
@@ -285,10 +292,22 @@ static void SocketAcceptCallBack(CFSocketRef s, CFSocketCallBackType type, CFDat
 }
 
 #pragma mark - Connection 代理
+- (void)connectionAttemptFailed:(Connection *)connection{
+    
+    NSLog(@"connection连接失败");
+    [self.clients removeObject:connection];
+}
+- (void)connectionTerminated:(Connection *)connection{
+    NSLog(@"connection连接中断");
+    [self.clients removeObject:connection];
+}
+- (void)receivedNetworkPacket:(NSString *)message viaConnection:(Connection *)connection{
+    NSLog(@"收到消息: %@", message);
+}
 
 #pragma mark - 消息发送
 - (void)sendMessage:(NSString *)message{
-    
+    [self.clients makeObjectsPerformSelector:@selector(sendNetworkPacket:) withObject:message];
 }
 - (void)sendMessage:(NSString *)message toMobile:(NSString *)mobileNumber{
     
